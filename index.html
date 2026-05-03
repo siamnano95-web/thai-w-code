@@ -1,58 +1,43 @@
 <!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai W Code - AR Guide</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-    
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Sarabun', sans-serif; }
-        
-        /* หน้าจอแจ้งเตือนก่อนสแกน */
-        #status-bar {
-            position: absolute; top: 0; width: 100%; padding: 10px;
-            background: rgba(0,0,0,0.6); color: #FFD700;
-            text-align: center; z-index: 10; font-size: 16px;
-        }
-
-        /* แผงควบคุมเสียงจะเด้งขึ้นมาเมื่อสแกนติด */
-        #audio-panel {
-            position: absolute; bottom: 40px; left: 0; right: 0;
-            display: none; flex-direction: column; align-items: center;
-            z-index: 20; transition: all 0.5s;
-        }
-
-        .title {
-            color: #FFD700; text-shadow: 2px 2px 4px #000;
-            font-size: 20px; margin-bottom: 15px; font-weight: bold;
-        }
-
-        .btn-group { display: flex; gap: 15px; }
-
-        button {
-            padding: 15px 25px; border-radius: 50px; border: 2px solid #FFD700;
-            background: rgba(0,0,0,0.8); color: white; font-size: 16px;
-            cursor: pointer; display: flex; align-items: center; gap: 10px;
-        }
-
-        button:active { background: #FFD700; color: black; }
+      /* สไตล์ของปุ่มที่จะเด้งขึ้นมา */
+      #audio-panel {
+        position: fixed;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: none; /* ซ่อนไว้ก่อนสแกนติด */
+        flex-direction: row;
+        gap: 20px;
+        z-index: 999;
+      }
+      .btn {
+        padding: 15px 25px;
+        font-size: 20px;
+        border: none;
+        border-radius: 50px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      }
+      .btn-th { background-color: #28a745; }
+      .btn-en { background-color: #007bff; }
     </style>
-</head>
-
-<body>
-    <div id="status-bar">🔍 ส่องกล้องไปที่ภาพจิตรกรรมฝาผนัง</div>
-
-    <div id="audio-panel">
-        <div class="title">ตอน: กวนข้าวทิพย์</div>
-<div class="btn-group">
-    <button onclick="changeLang('th')">🇹🇭 ภาษาไทย</button>
-    <button onclick="changeLang('en')">🇺🇸 English</button>
-</div>
-    </div>
-
+  </head>
+  <body>
     <audio id="sound-th" src="ยินดีต้อนรับ.mp3"></audio>
     <audio id="sound-en" src="Welcometo.mp3"></audio>
+
+    <div id="audio-panel">
+      <button class="btn btn-th" onclick="changeLang('th')">🇹🇭 ภาษาไทย</button>
+      <button class="btn btn-en" onclick="changeLang('en')">🇺🇸 English</button>
+    </div>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
              color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
@@ -60,52 +45,42 @@
         
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="target-0" mindar-image-target="targetIndex: 0">
+        <a-entity id="target" mindar-image-target="targetIndex: 0">
             <a-plane color="#FFD700" opacity="0.3" position="0 0 0" height="1" width="1.2" rotation="0 0 0"></a-plane>
         </a-entity>
     </a-scene>
 
-<script>
-    // 1. อ้างอิงถึง Target และแผงควบคุม
-    const target = document.querySelector('#target');
-    const panel = document.querySelector('#audio-panel');
-    
-    // 2. ตัวแปรเก็บไฟล์เสียงที่กำลังเล่นอยู่
-    let currentAudio = null;
+    <script>
+      const target = document.querySelector('#target');
+      const panel = document.querySelector('#audio-panel');
+      let currentAudio = null;
 
-    // 3. เมื่อสแกนติด (Found)
-    target.addEventListener("targetFound", () => {
-        panel.style.display = "flex"; // แสดงปุ่มเลือกภาษา
-    });
+      // เมื่อสแกนติด -> แสดงปุ่ม
+      target.addEventListener("targetFound", () => {
+        panel.style.display = "flex";
+      });
 
-    // 4. เมื่อหันกล้องหนี (Lost)
-    target.addEventListener("targetLost", () => {
-        panel.style.display = "none"; // ซ่อนปุ่ม
-        stopSound(); // หยุดเสียงทันที
-    });
+      // เมื่อหันกล้องหนี -> ซ่อนปุ่มและหยุดเสียง
+      target.addEventListener("targetLost", () => {
+        panel.style.display = "none";
+        stopSound();
+      });
 
-    // 5. ฟังก์ชันเล่นเสียงตามภาษาที่เลือก
-    function changeLang(lang) {
-        stopSound(); // หยุดเสียงเก่าก่อน
-        
-        // เลือก ID ให้ตรงกับที่ตั้งไว้ในแท็ก <audio>
+      function changeLang(lang) {
+        stopSound();
         const audioId = (lang === 'th') ? 'sound-th' : 'sound-en';
         currentAudio = document.getElementById(audioId);
-        
         if (currentAudio) {
-            currentAudio.play().catch(e => {
-                console.log("Audio play blocked by browser. Please click the button again.");
-            });
+          currentAudio.play().catch(e => alert("กรุณากดที่หน้าจอเพื่อเล่นเสียง"));
         }
-    }
+      }
 
-    // 6. ฟังก์ชันหยุดเสียงทั้งหมด
-    function stopSound() {
+      function stopSound() {
         const th = document.getElementById('sound-th');
         const en = document.getElementById('sound-en');
         if(th) { th.pause(); th.currentTime = 0; }
         if(en) { en.pause(); en.currentTime = 0; }
-    }
-</script>
-</body>
+      }
+    </script>
+  </body>
 </html>
